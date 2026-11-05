@@ -1,0 +1,47 @@
+name: Testes automaticos do Flask
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+  schedule:
+    # A cada 6 horas (horario UTC).
+    - cron: '17 */6 * * *'
+
+permissions:
+  contents: read
+
+jobs:
+  testes:
+    name: Executar testes com Pytest
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Baixar codigo
+        uses: actions/checkout@v7
+
+      - name: Preparar Python 3.13
+        uses: actions/setup-python@v7
+        with:
+          python-version: '3.13'
+          cache: 'pip'
+
+      - name: Instalar dependencias
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r requirements.txt
+
+      - name: Validar sintaxe
+        run: python -m compileall -q app.py tests
+
+      - name: Executar testes
+        run: python -m pytest -v --junitxml=relatorios/testes.xml
+
+      - name: Guardar relatorio
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: resultado-dos-testes
+          path: relatorios/testes.xml
+          if-no-files-found: ignore
